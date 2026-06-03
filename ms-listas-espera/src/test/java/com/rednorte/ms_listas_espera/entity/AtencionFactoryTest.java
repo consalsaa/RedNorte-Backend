@@ -39,6 +39,7 @@ class AtencionFactoryTest {
         assertEquals("Consulta General de especialidad: Cardiología", atencion.obtenerTipoMensaje());
         assertEquals(EstadoAtencion.EN_ESPERA, atencion.getEstado());
         assertNotNull(atencion.getFechaSolicitud());
+        assertEquals(SagaStatus.CONFIRMED, atencion.getSagaStatus());
     }
 
     @Test
@@ -55,6 +56,7 @@ class AtencionFactoryTest {
         assertEquals("Cirugía Cardiovascular", ((AtencionCirugia) atencion).getTipoCirugia());
         assertTrue(((AtencionCirugia) atencion).getRequierePabellon());
         assertEquals("Cirugía: Cirugía Cardiovascular (Requiere Pabellón)", atencion.obtenerTipoMensaje());
+        assertEquals(SagaStatus.CONFIRMED, atencion.getSagaStatus());
     }
 
     @Test
@@ -71,6 +73,7 @@ class AtencionFactoryTest {
         assertEquals("Trauma Craneal", ((AtencionEmergencia) atencion).getMotivoEmergencia());
         assertFalse(((AtencionEmergencia) atencion).getRequiereUCI());
         assertEquals("Emergencia: Trauma Craneal", atencion.obtenerTipoMensaje());
+        assertEquals(SagaStatus.CONFIRMED, atencion.getSagaStatus());
     }
 
     @Test

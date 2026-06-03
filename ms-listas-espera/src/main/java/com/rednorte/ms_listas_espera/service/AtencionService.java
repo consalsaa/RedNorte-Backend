@@ -11,4 +11,7 @@ public interface AtencionService {
     List<Atencion> obtenerTodas();
     Atencion actualizarEstado(Long id, String nuevoEstado);
     List<Atencion> obtenerPorRutPaciente(String rut);
+    Atencion registrarAtencionSaga(AtencionDTO dto);
+    Atencion cancelarAtencionSaga(Long id);
+    Atencion confirmarAtencionSaga(Long id);
 }
