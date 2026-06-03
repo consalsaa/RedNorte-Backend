@@ -40,6 +40,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
+        // Permitir preflight OPTIONS de CORS sin validar JWT
+        if (request.getMethod() != null && request.getMethod().name().equalsIgnoreCase("OPTIONS")) {
+            return chain.filter(exchange);
+        }
+
         // Verificar si la ruta es pública
         if (isPublicPath(path)) {
             return chain.filter(exchange);

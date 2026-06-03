@@ -13,6 +13,7 @@ import java.util.Map;
  * Genera tokens JWT para usuarios autenticados.
  * En producción, se validaría contra una base de datos de usuarios.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
