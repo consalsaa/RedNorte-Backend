@@ -27,9 +27,14 @@ public abstract class Atencion {
     @Column(nullable = false)
     private Integer prioridad; // 1 (Gravedad Alta) a 5 (Baja)
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "saga_status", nullable = false)
+    private SagaStatus sagaStatus;
+
     public Atencion() {
         this.fechaSolicitud = LocalDateTime.now();
         this.estado = EstadoAtencion.EN_ESPERA;
+        this.sagaStatus = SagaStatus.CONFIRMED;
     }
 
     public Atencion(Paciente paciente, Integer prioridad) {
@@ -49,6 +54,8 @@ public abstract class Atencion {
     public void setFechaSolicitud(LocalDateTime fechaSolicitud) { this.fechaSolicitud = fechaSolicitud; }
     public Integer getPrioridad() { return prioridad; }
     public void setPrioridad(Integer prioridad) { this.prioridad = prioridad; }
+    public SagaStatus getSagaStatus() { return sagaStatus; }
+    public void setSagaStatus(SagaStatus sagaStatus) { this.sagaStatus = sagaStatus; }
 
     public abstract String obtenerTipoMensaje();
 }

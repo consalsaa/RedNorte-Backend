@@ -194,4 +194,59 @@ class AtencionServiceImplTest {
         assertEquals(2, resultado.size());
         verify(atencionRepository, times(1)).findByPacienteRut("12345678-9");
     }
+
+    @Test
+    @DisplayName("Given valid DTO, when registrarAtencionSaga, then save with PENDING status")
+    void registrarAtencionSagaExitoso() {
+        AtencionDTO dto = new AtencionDTO();
+        dto.setRutPaciente("12345678-9");
+        dto.setTipo("CONSULTA");
+        dto.setPrioridad(3);
+        dto.setDetalle("Cardiología");
+
+        when(pacienteService.obtenerPorRut("12345678-9")).thenReturn(paciente);
+        when(atencionRepository.save(any(Atencion.class))).thenAnswer(invocation -> {
+            Atencion saved = invocation.getArgument(0);
+            saved.setId(15L);
+            return saved;
+        });
+
+        Atencion resultado = atencionService.registrarAtencionSaga(dto);
+
+        assertNotNull(resultado);
+        assertEquals(15L, resultado.getId());
+        assertEquals(SagaStatus.PENDING, resultado.getSagaStatus());
+        verify(pacienteService, times(1)).obtenerPorRut("12345678-9");
+        verify(atencionRepository, times(1)).save(any(Atencion.class));
+    }
+
+    @Test
+    @DisplayName("Given valid id, when cancelarAtencionSaga, then update status to CANCELLED and CANCELADO")
+    void cancelarAtencionSagaExitoso() {
+        when(atencionRepository.findById(1L)).thenReturn(Optional.of(consulta));
+        when(atencionRepository.save(any(Atencion.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Atencion resultado = atencionService.cancelarAtencionSaga(1L);
+
+        assertNotNull(resultado);
+        assertEquals(SagaStatus.CANCELLED, resultado.getSagaStatus());
+        assertEquals(EstadoAtencion.CANCELADO, resultado.getEstado());
+        verify(atencionRepository, times(1)).findById(1L);
+        verify(atencionRepository, times(1)).save(consulta);
+    }
+
+    @Test
+    @DisplayName("Given valid id, when confirmarAtencionSaga, then update status to CONFIRMED")
+    void confirmarAtencionSagaExitoso() {
+        consulta.setSagaStatus(SagaStatus.PENDING);
+        when(atencionRepository.findById(1L)).thenReturn(Optional.of(consulta));
+        when(atencionRepository.save(any(Atencion.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Atencion resultado = atencionService.confirmarAtencionSaga(1L);
+
+        assertNotNull(resultado);
+        assertEquals(SagaStatus.CONFIRMED, resultado.getSagaStatus());
+        verify(atencionRepository, times(1)).findById(1L);
+        verify(atencionRepository, times(1)).save(consulta);
+    }
 }
