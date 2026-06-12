@@ -2,7 +2,7 @@
 
 **RedNorte** es el backend de una plataforma inteligente para la gestión de listas de espera hospitalarias del Servicio Público de Salud RedNorte. Su propósito es optimizar el flujo de atención médica, automatizar reasignaciones ante cancelaciones, y proveer transparencia tanto al personal clínico como a los pacientes.
 
-El sistema está implementado como una arquitectura de **microservicios desacoplados** usando **Spring Boot 3.x / 4.x**, **Java 21**, **Spring Cloud (Eureka + Gateway)**, **Redis**, **RabbitMQ**, **PostgreSQL** y con cobertura de pruebas garantizada mediante **JaCoCo (≥ 85%)**.
+El sistema está implementado como una arquitectura de **microservicios desacoplados** usando **Spring Boot 3.x**, **Java 21**, **Spring Cloud (Eureka + Gateway)**, **Redis**, **RabbitMQ**, **PostgreSQL** y con cobertura de pruebas garantizada mediante **JaCoCo (≥ 85%)**.
 
 ---
 
@@ -76,7 +76,7 @@ graph TD
 | Tecnología | Versión | Uso |
 |---|---|---|
 | Java | 21 | Lenguaje base de todos los microservicios |
-| Spring Boot | 3.x / 4.x | Framework de aplicaciones |
+| Spring Boot | 3.x | Framework de aplicaciones |
 | Spring Cloud Gateway | 2025.x | API Gateway y filtro de seguridad JWT |
 | Spring Cloud Eureka | 2025.x | Service Discovery y balanceo de carga |
 | Resilience4j | 2.2.0 | Circuit Breaker y Fallbacks |
