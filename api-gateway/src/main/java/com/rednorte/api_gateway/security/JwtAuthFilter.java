@@ -32,7 +32,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     // Rutas que no requieren autenticación
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/login",
-            "/eureka"
+            "/eureka",
+            "/swagger-ui.html",
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/swagger-resources",
+            "/webjars"
     );
 
     @Override
@@ -81,7 +86,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+        return PUBLIC_PATHS.stream().anyMatch(path::startsWith)
+                || path.contains("/v3/api-docs")
+                || path.contains("/swagger-ui")
+                || path.contains("/swagger-resources")
+                || path.contains("/webjars");
     }
 
     @Override

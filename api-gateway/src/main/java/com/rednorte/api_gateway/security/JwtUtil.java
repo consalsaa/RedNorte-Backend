@@ -32,11 +32,12 @@ public class JwtUtil {
      * Genera un token JWT para un usuario autenticado.
      */
     public String generateToken(String username, String role) {
+        long oneHourInMillis = 3600000L;
         return Jwts.builder()
                 .subject(username)
                 .claim("role", role)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(new Date(System.currentTimeMillis() + oneHourInMillis))
                 .signWith(getSigningKey())
                 .compact();
     }
