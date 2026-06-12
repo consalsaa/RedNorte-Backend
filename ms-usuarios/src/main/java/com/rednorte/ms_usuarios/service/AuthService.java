@@ -20,6 +20,12 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
+    /**
+     * Valida las credenciales del usuario y genera un token JWT si son correctas.
+     * @param username Nombre de usuario.
+     * @param password Contraseña en texto plano.
+     * @return Optional con el token JWT si el login es exitoso, o vacío si falla.
+     */
     public Optional<String> login(String username, String password) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
         
@@ -33,5 +39,23 @@ public class AuthService {
         }
         
         return Optional.empty();
+    }
+
+    /**
+     * Registra un nuevo usuario en el sistema.
+     * Si el nombre de usuario ya existe, lanza una excepción.
+     * @param username Nombre de usuario deseado (debe ser único).
+     * @param password Contraseña en texto plano.
+     * @param role Rol del usuario (ej: ROLE_PACIENTE, ROLE_MEDICO, ROLE_ADMIN).
+     * @return El usuario recién creado.
+     */
+    public Usuario registrarUsuario(String username, String password, String role) {
+        if (usuarioRepository.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("El nombre de usuario '" + username + "' ya está en uso.");
+        }
+        // El rol por defecto para auto-registro es ROLE_PACIENTE para proteger el sistema
+        String rolAsignado = (role != null && !role.isBlank()) ? role : "ROLE_PACIENTE";
+        Usuario nuevoUsuario = new Usuario(username, password, rolAsignado);
+        return usuarioRepository.save(nuevoUsuario);
     }
 }
