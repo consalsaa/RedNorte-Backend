@@ -6,6 +6,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
 @EnableDiscoveryClient
+@org.springframework.cache.annotation.EnableCaching
 public class MsListasEsperaApplication {
 
 	public static void main(String[] args) {

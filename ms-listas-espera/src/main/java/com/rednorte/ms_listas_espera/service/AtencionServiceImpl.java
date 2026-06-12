@@ -8,6 +8,8 @@ import com.rednorte.ms_listas_espera.entity.Paciente;
 import com.rednorte.ms_listas_espera.entity.SagaStatus;
 import com.rednorte.ms_listas_espera.repository.AtencionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,7 @@ public class AtencionServiceImpl implements AtencionService {
     private PacienteService pacienteService;
 
     @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
     public Atencion registrarAtencion(AtencionDTO dto) {
         Paciente paciente = pacienteService.obtenerPorRut(dto.getRutPaciente());
         
@@ -32,6 +35,7 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    @Cacheable(value = "listasEspera")
     public List<Atencion> obtenerListaEspera() {
         return atencionRepository.findByEstadoOrderByPrioridadAscFechaSolicitudAsc(EstadoAtencion.EN_ESPERA);
     }
@@ -42,6 +46,7 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
     public Atencion actualizarEstado(Long id, String nuevoEstado) {
         Atencion atencion = atencionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Atención con ID " + id + " no encontrada"));
@@ -61,6 +66,7 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
     public Atencion registrarAtencionSaga(AtencionDTO dto) {
         Paciente paciente = pacienteService.obtenerPorRut(dto.getRutPaciente());
         Atencion atencion = AtencionFactory.crearAtencion(dto.getTipo(), paciente, dto.getPrioridad(), dto.getDetalle());
@@ -69,6 +75,7 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
     public Atencion cancelarAtencionSaga(Long id) {
         Atencion atencion = atencionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Atención con ID " + id + " no encontrada"));
@@ -78,6 +85,7 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
     public Atencion confirmarAtencionSaga(Long id) {
         Atencion atencion = atencionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Atención con ID " + id + " no encontrada"));
