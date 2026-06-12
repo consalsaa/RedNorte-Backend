@@ -1,6 +1,7 @@
 package com.rednorte.ms_listas_espera.service;
 
 import com.rednorte.ms_listas_espera.entity.Paciente;
+import com.rednorte.ms_listas_espera.exception.ResourceNotFoundException;
 import com.rednorte.ms_listas_espera.repository.PacienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,6 @@ public class PacienteServiceImpl implements PacienteService {
     @Override
     public Paciente obtenerPorRut(String rut) {
         return pacienteRepository.findByRut(rut)
-                .orElseThrow(() -> new RuntimeException("Paciente con RUT " + rut + " no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente con RUT " + rut + " no encontrado"));
     }
 }
