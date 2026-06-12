@@ -30,6 +30,11 @@ spring:
           uri: lb://MS-REASIGNACION
           predicates:
             - Path=/api/reasignacion/**
+            
+        - id: ms-usuarios
+          uri: lb://MS-USUARIOS
+          predicates:
+            - Path=/api/v1/auth/**, /api/v1/usuarios/**
 
 eureka:
   client:
