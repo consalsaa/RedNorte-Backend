@@ -1,156 +1,189 @@
-# Plataforma RedNorte Backend 🏥
+# Plataforma RedNorte — Backend 🏥
 
-RedNorte es una solución integral y escalable orientada a microservicios diseñada para optimizar y gestionar las listas de espera hospitalarias en tiempo real. Este repositorio alberga el backend de la plataforma, implementado bajo estándares rigurosos de nivel de producción utilizando **Spring Boot 3.x**, **Java 21**, **Spring Cloud**, **Redis**, **RabbitMQ**, **PostgreSQL** y **JaCoCo**.
+**RedNorte** es el backend de una plataforma inteligente para la gestión de listas de espera hospitalarias del Servicio Público de Salud RedNorte. Su propósito es optimizar el flujo de atención médica, automatizar reasignaciones ante cancelaciones, y proveer transparencia tanto al personal clínico como a los pacientes.
+
+El sistema está implementado como una arquitectura de **microservicios desacoplados** usando **Spring Boot 3.x / 4.x**, **Java 21**, **Spring Cloud (Eureka + Gateway)**, **Redis**, **RabbitMQ**, **PostgreSQL** y con cobertura de pruebas garantizada mediante **JaCoCo (≥ 85%)**.
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
-El ecosistema está constituido por una pasarela de entrada (API Gateway), un servidor de descubrimiento y 6 microservicios especializados y desacoplados:
-
 ```mermaid
 graph TD
-    Client[Cliente / Frontend] -->|Peticiones HTTP| Gateway[API Gateway :8080]
+    Client[Cliente / Frontend React] -->|Peticiones HTTP| Gateway[API Gateway :8080]
     Gateway -->|Enrutamiento dinámico| Eureka[Servidor Eureka :8761]
-    
-    subgraph Microservicios
+
+    subgraph Microservicios de Negocio
         Gateway --> MS_Listas[ms-listas-espera :8081]
-        Gateway --> MS_Portal[ms-portal-paciente :8082]
-        Gateway --> MS_Reasignacion[ms-reasignacion :8083]
+        Gateway --> MS_Portal[ms-portal-paciente :8083]
+        Gateway --> MS_Reasignacion[ms-reasignacion :8082]
         Gateway --> MS_Usuarios[ms-usuarios :8084]
         Gateway --> MS_Notificaciones[ms-notificaciones :8085]
         Gateway --> MS_Auditoria[ms-auditoria :8086]
     end
-    
+
     subgraph Infraestructura
-        MS_Listas -.->|Caché Cacheable/Evict| Redis[(Redis Cache :6379)]
-        MS_Reasignacion ==>|Publica Eventos JSON| Rabbit[(RabbitMQ :5672)]
-        Rabbit ==>|Consume Eventos| MS_Notificaciones
-        MS_Auditoria -.->|Llamada sp_calcular_estadisticas_espera| DB[(PostgreSQL :5432)]
+        MS_Listas -.->|Caché @Cacheable/@CacheEvict| Redis[(Redis :6379)]
+        MS_Reasignacion ==>|Publica evento JSON| Rabbit[(RabbitMQ :5672)]
+        Rabbit ==>|@RabbitListener consume| MS_Notificaciones
+        MS_Auditoria -.->|Stored Procedure| DB[(PostgreSQL :5432)]
     end
 ```
 
 ---
 
-## 📦 Detalle de Componentes y Microservicios
+## 📦 Microservicios — Descripción de Propósito
 
-### 1. 🔍 Servidor de Descubrimiento (`eureka-server`)
-* **Puerto**: `8761`
-* **Tecnología**: Spring Cloud Netflix Eureka.
-* **Propósito**: Registro dinámico de todas las instancias de microservicios, facilitando el balanceo de carga en el Gateway y el desacoplamiento de IPs y puertos físicos.
+### 1. 🔍 `eureka-server` (Puerto 8761)
+**Propósito:** Servidor de descubrimiento de servicios. Todos los microservicios se registran aquí dinámicamente, permitiendo al API Gateway balancear carga sin conocer IPs físicas. Es el primer servicio en arrancar.
 
-### 2. 🛡️ API Gateway (`api-gateway`)
-* **Puerto**: `8080`
-* **Tecnología**: Spring Cloud Gateway, Reactive WebFlux, JJWT (v0.12.6).
-* **Propósito**: Punto de entrada único para todos los clientes.
-* **Características Clave**:
-  - Enrutamiento dinámico y balanceo de carga entre microservicios registrados en Eureka.
-  - Filtro de seguridad global (`JwtAuthFilter`) que valida tokens JWT y añade encabezados de usuario (`X-User-Name`, `X-User-Role`) a las peticiones descendentes.
-  - Firma criptográfica rigurosa mediante HMAC SHA-256 (`Keys.hmacShaKeyFor`) y expiración estricta de tokens fijada en exactamente 1 hora (3600000 ms).
-  - Exclusiones de seguridad públicas para `/auth/login`, `/eureka` y la documentación unificada de **Swagger UI** (`/swagger-ui.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-resources/**`, `/webjars/**`).
+### 2. 🛡️ `api-gateway` (Puerto 8080)
+**Propósito:** Punto de entrada único para toda la plataforma. Se encarga de:
+- Validar tokens JWT mediante `JwtAuthFilter` (HMAC SHA-256, expiración de 1 hora).
+- Enrutar peticiones al microservicio correcto vía Eureka.
+- Permite acceso público solo a `/api/v1/auth/**` (login y registro) y a la documentación Swagger.
 
-### 3. 📋 Gestión de Listas de Espera (`ms-listas-espera`)
-* **Puerto**: `8081`
-* **Tecnología**: Spring WebMvc, Spring Data JPA, Redis.
-* **Propósito**: Administrar el flujo de registro, asignación y priorización de atenciones médicas.
-* **Características Clave**:
-  - **Patrón Factory Method**: Instanciación polimórfica de atenciones (`AtencionCirugia`, `AtencionConsulta`, `AtencionEmergencia`) según el tipo de solicitud.
-  - **Integración de Caché (Redis)**: Cacheo dinámico del listado de espera (`@Cacheable(value = "listasEspera")`) y políticas de invalidación inmediata (`@CacheEvict`) ante cualquier modificación o registro, asegurando coherencia absoluta para el personal médico.
-  - **Manejo Global de Excepciones**: Implementación de `@RestControllerAdvice` con la clase DTO estructurada `ErrorResponse` (`timestamp`, `status`, `error`, `message`, `path`) y excepciones de negocio personalizadas como `ResourceNotFoundException`.
-  - Documentación técnica exhaustiva mediante etiquetas JavaDoc en controladores y servicios.
+### 3. 📋 `ms-listas-espera` (Puerto 8081)
+**Propósito:** Núcleo del negocio hospitalario. Gestiona el registro, priorización y estado de las atenciones médicas.
+- **Patrón Factory Method:** Instancia polimórficamente `AtencionCirugia`, `AtencionConsulta` y `AtencionEmergencia`.
+- **Caché Redis:** Cachea la lista de espera con `@Cacheable` e invalida con `@CacheEvict` ante cambios.
+- **Patrón SAGA:** Expone endpoints de transacción compensatoria (`/saga/crear`, `/saga/confirmar`, `/saga/cancelar`).
 
-### 4. 🔄 Reasignación de Turnos (`ms-reasignacion`)
-* **Puerto**: `8083`
-* **Tecnología**: Spring WebMvc, Spring Data AMQP (RabbitMQ), Resilience4j.
-* **Propósito**: Ejecutar algoritmos de reasignación automática de citas o médicos ante cancelaciones imprevistas.
-* **Características Clave**:
-  - Tolerancia a fallos configurada a través de Resilience4j (Circuit Breakers y Fallbacks) al invocar otros servicios.
-  - Publicación asíncrona de mensajes en formato JSON a la cola RabbitMQ mediante `RabbitTemplate` y `TopicExchange` (`reasignacion.exchange`), notificando las reasignaciones concretadas.
+### 4. 🔄 `ms-reasignacion` (Puerto 8082)
+**Propósito:** Motor de contingencia. Cuando una cita se cancela, busca automáticamente al siguiente paciente prioritario, actualiza su estado y publica un evento en RabbitMQ.
+- **Circuit Breaker (Resilience4j):** Protege contra fallos de `ms-listas-espera`. Si falla, guarda la reasignación como "FALLIDA" para reintentar.
+- **RabbitMQ:** Publica mensajes al exchange `reasignacion.exchange`.
 
-### 5. 🏥 Portal del Paciente (`ms-portal-paciente`)
-* **Puerto**: `8082`
-* **Tecnología**: Spring WebMvc, Resilience4j, Feign/RestClients.
-* **Propósito**: BFF (Backend For Frontend) para centralizar la interacción de los pacientes (consultar estado de sus citas, historial médico e información demográfica).
-* **Características Clave**:
-  - Encapsulación de llamadas a múltiples microservicios con resiliencia integrada y estrategias de degradación de servicio (Fallbacks).
+### 5. 🏥 `ms-portal-paciente` (Puerto 8083)
+**Propósito:** BFF (Backend For Frontend). Actúa como intermediario entre la interfaz React y los microservicios de negocio, entregando vistas unificadas del historial del paciente. Incluye Circuit Breaker para degradar con gracia ante fallos.
 
-### 6. 👤 Gestión de Usuarios (`ms-usuarios`)
-* **Puerto**: `8084`
-* **Tecnología**: Spring WebMvc, Spring Data JPA.
-* **Propósito**: Controlar el registro, roles (médicos, administrativos, pacientes) y credenciales demográficas de los usuarios del sistema.
+### 6. 👤 `ms-usuarios` (Puerto 8084)
+**Propósito:** Gestor de identidad y autenticación. Es el **único microservicio autorizado para emitir tokens JWT**. Gestiona el registro y login de usuarios con sus respectivos roles.
+- **Endpoint `POST /api/v1/auth/login`:** Valida credenciales y devuelve un JWT.
+- **Endpoint `POST /api/v1/auth/register`:** Registra un nuevo usuario en el sistema (rol por defecto: `ROLE_PACIENTE`).
+- **`DataInitializer`:** Al arrancar, inyecta usuarios de prueba (`admin`, `medico`, `paciente`) si no existen.
 
-### 7. 🔔 Central de Notificaciones (`ms-notificaciones`)
-* **Puerto**: `8085`
-* **Tecnología**: Spring Data AMQP (RabbitMQ).
-* **Propósito**: Centralizar el envío de alertas y notificaciones críticas.
-* **Características Clave**:
-  - Listener asíncrono (`NotificationListener`) decorado con `@RabbitListener` que consume eventos de reasignación en formato JSON y procesa simulaciones de envío de emails y alertas por SMS.
+### 7. 🔔 `ms-notificaciones` (Puerto 8085)
+**Propósito:** Cartero digital del sistema. No expone endpoints HTTP. Su única función es escuchar la cola `reasignacion.queue` en RabbitMQ mediante `@RabbitListener` y simular el envío de alertas al paciente (email/SMS) registrando la notificación en el log del sistema.
 
-### 8. 📊 Auditoría y Estadísticas (`ms-auditoria`)
-* **Puerto**: `8086`
-* **Tecnología**: Spring WebMvc, Spring Data JPA, PostgreSQL.
-* **Propósito**: Mantener trazas y bitácoras de acciones críticas y generar reportes analíticos del hospital.
-* **Características Clave**:
-  - Invocación de Stored Procedures de PostgreSQL (`sp_calcular_estadisticas_espera`) mediante anotaciones `@Procedure` y consultas nativas optimizadas para recuperar reportes tabulares de rendimiento hospitalario.
+### 8. 📊 `ms-auditoria` (Puerto 8086)
+**Propósito:** Módulo de reportabilidad hospitalaria. Ejecuta el Stored Procedure `sp_calcular_estadisticas_espera` de PostgreSQL y expone los resultados en el endpoint `GET /api/v1/auditoria/estadisticas`, retornando métricas del rendimiento de la lista de espera por tipo de prioridad.
 
 ---
 
-## 🛠️ Tecnologías y Calidad de Código
+## 🛠️ Stack Tecnológico
 
-* **Java 21** & **Spring Boot 3.3.4 / 4.0.5**
-* **JaCoCo (Java Code Coverage)**: Integrado en el ciclo de compilación Maven de cada microservicio, configurado para imponer un estándar mínimo de **85% de cobertura de código** para garantizar la robustez funcional del software antes de ser empaquetado.
-* **H2 Console / PostgreSQL**: Configuración dual inteligente. Por defecto, en desarrollo local los servicios corren con la base de datos H2 en memoria (con consola expuesta en `/h2-console`). En entornos de contenedor o producción, se activa el perfil de conexión a PostgreSQL mediante las variables de entorno inyectadas en Docker.
-* **OpenAPI / Swagger**:
-  - **API Gateway**: Integra `springdoc-openapi-starter-webflux-ui` para servir de agregador reactivo.
-  - **Microservicios**: Integran `springdoc-openapi-starter-webmvc-ui` expuesta de forma pública a través del Gateway.
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Java | 21 | Lenguaje base de todos los microservicios |
+| Spring Boot | 3.x / 4.x | Framework de aplicaciones |
+| Spring Cloud Gateway | 2025.x | API Gateway y filtro de seguridad JWT |
+| Spring Cloud Eureka | 2025.x | Service Discovery y balanceo de carga |
+| Resilience4j | 2.2.0 | Circuit Breaker y Fallbacks |
+| Spring Data JPA | — | Acceso a datos con patrón Repository |
+| PostgreSQL | 15 | Base de datos de producción |
+| H2 | — | Base de datos en memoria para desarrollo local |
+| Redis | alpine | Caché de la lista de espera |
+| RabbitMQ | 3-management | Mensajería asíncrona de notificaciones |
+| JJWT | 0.12.6 | Generación y validación de tokens JWT |
+| JaCoCo | 0.8.12 | Cobertura de pruebas ≥ 85% |
+| Springdoc OpenAPI | 2.5.0 | Documentación Swagger automática |
 
 ---
 
-## 🚀 Instrucciones de Configuración y Despliegue
+## 🔑 Endpoints de Autenticación (`ms-usuarios`)
+
+Todos los endpoints de autenticación son **públicos** (no requieren token JWT).
+
+### `POST /api/v1/auth/login`
+Inicia sesión y obtiene un token JWT.
+
+**Request body:**
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+**Response (200 OK):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "username": "admin",
+  "role": "ROLE_ADMIN",
+  "message": "Autenticación exitosa"
+}
+```
+
+### `POST /api/v1/auth/register`
+Registra un nuevo usuario. El rol asignado por defecto es `ROLE_PACIENTE`.
+
+**Request body:**
+```json
+{
+  "username": "juan.perez",
+  "password": "miPassword123"
+}
+```
+**Response (201 Created):**
+```json
+{
+  "message": "Usuario registrado exitosamente",
+  "username": "juan.perez",
+  "role": "ROLE_PACIENTE"
+}
+```
+**Response (409 Conflict) — Usuario ya existe:**
+```json
+{
+  "message": "El nombre de usuario 'juan.perez' ya está en uso."
+}
+```
+
+---
+
+## 🚀 Instrucciones de Despliegue
 
 ### Requisitos Previos
-* JDK 21 instalado
-* Maven 3.8+ o uso de los wrappers incluidos (`mvnw` / `mvnw.cmd`)
-* Docker y Docker Compose instalados
+- JDK 21
+- Docker y Docker Compose
 
-### Paso 1: Levantar la Infraestructura Base (Redis, RabbitMQ, PostgreSQL)
-Usa el archivo `docker-compose.yml` provisto en la raíz del proyecto para iniciar las bases de datos y middleware de mensajería:
-
+### Levantar con Docker Compose (Recomendado)
 ```bash
+docker-compose up -d
+```
+Esto levanta todos los servicios en el orden correcto: PostgreSQL → Redis → RabbitMQ → Eureka → Gateway → Microservicios.
+
+### Desarrollo Local (sin Docker)
+```bash
+# 1. Levantar infraestructura de soporte
 docker-compose up -d postgres redis rabbitmq
+
+# 2. Arrancar en orden: eureka-server, luego api-gateway, luego los microservicios
+cd eureka-server && ./mvnw spring-boot:run
 ```
 
-Esto arrancará:
-* **PostgreSQL**: Puerto `5432` (Inicializando automáticamente las bases de datos y el procedimiento almacenado definido en `init-databases.sql`).
-* **Redis**: Puerto `6379`.
-* **RabbitMQ**: Puertos `5672` (mensajería) y `15672` (consola de administración en http://localhost:15672, credenciales por defecto `guest`/`guest`).
-
-### Paso 2: Compilación y Verificación de Cobertura
-Para compilar y correr las pruebas de cobertura (JaCoCo) en cualquiera de los microservicios, ejecuta el Maven wrapper del proyecto correspondiente:
-
+### Cobertura de Pruebas (JaCoCo)
 ```bash
-# Ejemplo en el microservicio de listas de espera
-cd ms-listas-espera
-./mvnw clean compile test
-```
-Los reportes de cobertura generados por JaCoCo estarán disponibles en `target/site/jacoco/index.html` tras finalizar las pruebas de forma exitosa.
-
-### Paso 3: Lanzar los Servicios
-Inicia los servicios en el siguiente orden secuencial para asegurar el correcto registro en Eureka:
-
-1. **`eureka-server`**
-2. **`api-gateway`**
-3. **Microservicios necesarios** (`ms-listas-espera`, `ms-reasignacion`, etc.)
-
-Puedes correrlos mediante tu IDE favorito o por consola en cada módulo:
-```bash
-./mvnw spring-boot:run
+cd ms-usuarios
+./mvnw clean verify
+# Reporte en: target/site/jacoco/index.html
 ```
 
 ---
 
-## 📈 Endpoint de Documentación OpenAPI
+## 📖 Documentación OpenAPI / Swagger
 
-Una vez que el API Gateway y los microservicios estén arriba y registrados en Eureka, puedes visualizar e interactuar con toda la especificación OpenAPI unificada del ecosistema en tu navegador:
+Con el sistema corriendo, accede a la documentación interactiva en:
 
 🔗 **Swagger UI**: [http://localhost:8080/webjars/swagger-ui/index.html](http://localhost:8080/webjars/swagger-ui/index.html)
+
+---
+
+## 👥 Usuarios de Prueba (Pre-cargados)
+
+| Username | Password | Rol |
+|---|---|---|
+| `admin` | `admin123` | ROLE_ADMIN |
+| `medico` | `medico123` | ROLE_MEDICO |
+| `paciente` | `paciente123` | ROLE_PACIENTE |
