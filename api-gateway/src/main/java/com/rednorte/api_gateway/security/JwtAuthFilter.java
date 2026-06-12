@@ -29,8 +29,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Rutas que no requieren autenticación
     private static final List<String> PUBLIC_PATHS = List.of(
+            "/api/v1/auth/",
             "/auth/login",
             "/eureka",
             "/swagger-ui.html",
@@ -39,6 +39,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/swagger-resources",
             "/webjars"
     );
+
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
