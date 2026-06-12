@@ -41,5 +41,9 @@ resilience4j:
         minimumNumberOfCalls: 5
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s
         failureRateThreshold: 50
+
+# Configuracion JWT compartida con API Gateway
+jwt:
+  secret: RedNorte2026SecretKeyForJwtTokenGenerationAndValidation!@#
+  expiration: 3600000
