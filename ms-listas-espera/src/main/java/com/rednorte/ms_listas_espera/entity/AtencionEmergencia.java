@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("EMERGENCIA")
 public class AtencionEmergencia extends Atencion {
 
+    private static final long serialVersionUID = 1L;
+
     private String motivoEmergencia;
     private Boolean requiereUCI;
 

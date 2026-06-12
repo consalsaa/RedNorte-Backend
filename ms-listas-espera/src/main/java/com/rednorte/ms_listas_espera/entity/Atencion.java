@@ -7,7 +7,9 @@ import java.time.LocalDateTime;
 @Table(name = "atenciones")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo_atencion")
-public abstract class Atencion {
+public abstract class Atencion implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

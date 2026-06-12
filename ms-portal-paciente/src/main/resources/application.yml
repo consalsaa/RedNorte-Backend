@@ -6,13 +6,13 @@ spring:
     name: ms-portal-paciente
   
   datasource:
-    url: jdbc:postgresql://postgres-db:5432/portal_paciente_db
-    driverClassName: org.postgresql.Driver
-    username: postgres
+    url: jdbc:h2:mem:portal_paciente_db;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
     password: password
   
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
     show-sql: true

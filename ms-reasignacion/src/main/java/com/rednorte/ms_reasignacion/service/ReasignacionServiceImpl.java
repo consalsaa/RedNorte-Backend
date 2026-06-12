@@ -11,6 +11,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.rednorte.ms_reasignacion.config.RabbitMQConfig;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -34,6 +36,9 @@ public class ReasignacionServiceImpl implements ReasignacionService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * Procesa la cancelación de una atención.
@@ -105,6 +110,19 @@ public class ReasignacionServiceImpl implements ReasignacionService {
                 + "Atención " + siguienteId + " agendada para paciente " + rutReasignado);
 
         log.info("Reasignación exitosa: atención {} reasignada a paciente {}", siguienteId, rutReasignado);
+
+        // Publicar evento en RabbitMQ
+        try {
+            Map<String, Object> messagePayload = Map.of(
+                "atencionId", siguienteId,
+                "mensaje", "Reasignación completada"
+            );
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, messagePayload);
+            log.info("Mensaje de reasignación enviado a RabbitMQ para atención ID: {}", siguienteId);
+        } catch (Exception e) {
+            log.error("Fallo al enviar mensaje a RabbitMQ: {}", e.getMessage());
+        }
+
         return reasignacionRepository.save(reasignacion);
     }
 
