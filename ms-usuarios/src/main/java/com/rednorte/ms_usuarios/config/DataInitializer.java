@@ -13,9 +13,9 @@ public class DataInitializer {
     public CommandLineRunner initData(UsuarioRepository usuarioRepository) {
         return args -> {
             if (usuarioRepository.count() == 0) {
-                usuarioRepository.save(new Usuario("admin", "admin123", "ROLE_ADMIN"));
-                usuarioRepository.save(new Usuario("medico", "medico123", "ROLE_MEDICO"));
-                usuarioRepository.save(new Usuario("paciente", "paciente123", "ROLE_PACIENTE"));
+                usuarioRepository.save(new Usuario("admin", "admin123", "ROLE_ADMIN", ""));
+                usuarioRepository.save(new Usuario("medico", "medico123", "ROLE_MEDICO", ""));
+                usuarioRepository.save(new Usuario("paciente", "paciente123", "ROLE_PACIENTE", "12345678-9"));
             }
         };
     }

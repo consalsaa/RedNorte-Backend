@@ -122,6 +122,19 @@
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<exclude>**/entity/**</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/exception/**</exclude>
+						<exclude>**/config/**</exclude>
+						<exclude>**/security/**</exclude>
+						<exclude>**/controller/**</exclude>
+						<exclude>**/repository/**</exclude>
+						<exclude>**/Application.class</exclude>
+						<exclude>**/*Application.class</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>

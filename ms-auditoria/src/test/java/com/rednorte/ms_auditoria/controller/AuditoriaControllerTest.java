@@ -31,8 +31,8 @@ class AuditoriaControllerTest {
     void getEstadisticas_Success() throws Exception {
         List<Map<String, Object>> mockStats = new ArrayList<>();
         Map<String, Object> stat1 = new HashMap<>();
-        stat1.put("prioridad_medica", "ALTA");
-        stat1.put("total_pacientes_esperando", 5);
+        stat1.put("prioridad", 1);
+        stat1.put("cantidad", 5);
         mockStats.add(stat1);
 
         when(auditoriaService.obtenerEstadisticas()).thenReturn(mockStats);
@@ -40,7 +40,7 @@ class AuditoriaControllerTest {
         mockMvc.perform(get("/api/v1/auditoria/estadisticas")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].prioridad_medica").value("ALTA"))
-                .andExpect(jsonPath("$[0].total_pacientes_esperando").value(5));
+                .andExpect(jsonPath("$[0].prioridad").value(1))
+                .andExpect(jsonPath("$[0].cantidad").value(5));
     }
 }

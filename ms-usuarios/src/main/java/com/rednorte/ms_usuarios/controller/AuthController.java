@@ -42,6 +42,7 @@ public class AuthController {
                         "token", tokenOpt.get(),
                         "username", usuario.getUsername(),
                         "role", usuario.getRole(),
+                        "rut", usuario.getRut() != null ? usuario.getRut() : "",
                         "message", "Autenticación exitosa"
                 ));
             }
@@ -57,6 +58,7 @@ public class AuthController {
         String username = body.get("username");
         String password = body.get("password");
         String role = body.getOrDefault("role", "ROLE_PACIENTE");
+        String rut = body.get("rut");
 
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             return ResponseEntity.badRequest()
@@ -64,11 +66,12 @@ public class AuthController {
         }
 
         try {
-            Usuario nuevo = authService.registrarUsuario(username, password, role);
+            Usuario nuevo = authService.registrarUsuario(username, password, role, rut);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Usuario registrado exitosamente",
                     "username", nuevo.getUsername(),
-                    "role", nuevo.getRole()
+                    "role", nuevo.getRole(),
+                    "rut", nuevo.getRut() != null ? nuevo.getRut() : ""
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
