@@ -42,6 +42,10 @@ spring:
           uri: lb://MS-USUARIOS
           predicates:
             - Path=/api/v1/usuarios/**
+        - id: ms-auditoria
+          uri: lb://MS-AUDITORIA
+          predicates:
+            - Path=/api/v1/auditoria/**
 
 eureka:
   client:

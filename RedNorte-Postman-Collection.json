@@ -1,7 +1,7 @@
 {
 	"info": {
 		"name": "RedNorte - Servicio Público de Salud",
-		"description": "Colección completa de endpoints para la plataforma RedNorte.\n\n**Flujo de uso:**\n1. Ejecutar LOGIN para obtener el token JWT\n2. El token se guarda automáticamente en la variable `jwt_token`\n3. Todos los demás endpoints usan ese token automáticamente\n\n**Credenciales de demostración:**\n- admin / admin123 (ROLE_ADMIN)\n- medico / medico123 (ROLE_MEDICO)\n- paciente / paciente123 (ROLE_PACIENTE)",
+		"description": "Colección completa y actualizada de endpoints para la plataforma RedNorte.\n\n### 🔑 Autenticación y Guardado Automático de Token:\n1. Ejecutar algún endpoint de **LOGIN** dentro del folder **🔐 Autenticación y Usuarios** (por ejemplo, Login Admin).\n2. Los scripts de prueba de Postman extraerán el token JWT de la respuesta y lo guardarán automáticamente en la variable de colección `jwt_token`.\n3. Todas las solicitudes subsecuentes heredarán automáticamente esta autenticación Bearer Token.\n\n### 🏥 Flujo de Uso del Sistema (Ejemplo Completo):\nPara probar el ciclo completo de la plataforma RedNorte, siga el orden establecido en la carpeta **🧪 Flujo Completo de Prueba** o siga el flujo lógico de negocio:\n\n1. **Login e Identificación**: Autentíquese con credenciales administrativas (`admin` / `admin123`) para obtener privilegios globales.\n2. **Registrar Pacientes**: Registre a dos pacientes en el sistema central de listas de espera (ej. Juan Pérez con RUT `12345678-9` y María González con RUT `98765432-1`).\n3. **Crear Perfil en el Portal**: Registre el perfil de contacto e historial clínico básico de ambos pacientes en `ms-portal-paciente` para que puedan interactuar con el portal.\n4. **Ingresar Derivación de Juan**: Registre una atención médica de tipo CONSULTA para Juan con una prioridad moderada (ej. Prioridad 3 en Cardiología). La atención ingresará inicialmente en estado `EN_ESPERA`.\n5. **Agendar Cita (Cupo Disponible)**: Asigne y agende formalmente la hora de Juan, cambiando el estado de su atención a `AGENDADO` (ID = 1).\n6. **Ingresar Derivación Prioritaria de María**: Registre una cirugía Cardiovascular para María con alta prioridad (ej. Prioridad 1). Al no haber cupos libres, María ingresará a la lista de espera en estado `EN_ESPERA`.\n7. **Cancelación y Reasignación Automática**: Juan se ve obligado a cancelar su hora. Llame al motor de reasignación (`ms-reasignacion`) enviando la solicitud para procesar la cancelación de la cita ID 1. \n   - *Lógica interna:* El microservicio de reasignación marcará la cita de Juan como `CANCELADO`, buscará de forma automatizada al paciente prioritario en espera (`ms-listas-espera` detectará a María con prioridad 1), y le agendará la hora liberada cambiando su estado a `AGENDADO`.\n8. **Notificación al Instante**: El motor publicará un mensaje en RabbitMQ (`reasignacion.queue`), el cual será recibido en tiempo real por `ms-notificaciones` para notificar a María de su nueva hora agendada.\n9. **Consulta del Paciente**: María entra a su panel del portal (`ms-portal-paciente`) y consulta sus citas activas. El servicio orquesta la información devolviendo su nueva cita agendada de forma resiliente.\n10. **Auditoría e Indicadores**: El director del hospital consulta las estadísticas agregadas en `ms-auditoria`. Este ejecuta un stored procedure en base de datos PostgreSQL que computa y retorna los tiempos promedio de espera agregados por prioridad.\n\n**Credenciales de Demostración:**\n- **Administrador**: `admin` / `admin123` (Rol: ROLE_ADMIN)\n- **Médico**: `medico` / `medico123` (Rol: ROLE_MEDICO)\n- **Paciente**: `paciente` / `paciente123` (Rol: ROLE_PACIENTE, RUT de prueba: `12345678-9`)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -28,8 +28,8 @@
 	},
 	"item": [
 		{
-			"name": "🔐 Autenticación",
-			"description": "Endpoint público para obtener token JWT. No requiere autenticación previa.",
+			"name": "🔐 Autenticación y Usuarios",
+			"description": "Endpoints para el manejo de sesiones de usuarios y listado de cuentas. Las rutas de login y registro son públicas.",
 			"item": [
 				{
 					"name": "LOGIN - Obtener Token JWT (Admin)",
@@ -64,11 +64,11 @@
 							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/login",
+							"raw": "{{base_url}}/api/v1/auth/login",
 							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"path": ["api", "v1", "auth", "login"]
 						},
-						"description": "Autentica al usuario y devuelve un token JWT.\nEl token se guarda automáticamente en la variable `jwt_token` para usarse en las demás peticiones.\n\n**Usuarios disponibles:**\n- admin / admin123 → ROLE_ADMIN\n- medico / medico123 → ROLE_MEDICO\n- paciente / paciente123 → ROLE_PACIENTE"
+						"description": "Autentica al usuario administrador y devuelve un token JWT.\nEl token se guarda automáticamente en la variable `jwt_token` para ser utilizado por las demás peticiones de la colección."
 					}
 				},
 				{
@@ -104,9 +104,9 @@
 							"raw": "{\n    \"username\": \"medico\",\n    \"password\": \"medico123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/login",
+							"raw": "{{base_url}}/api/v1/auth/login",
 							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"path": ["api", "v1", "auth", "login"]
 						}
 					}
 				},
@@ -143,21 +143,18 @@
 							"raw": "{\n    \"username\": \"paciente\",\n    \"password\": \"paciente123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/login",
+							"raw": "{{base_url}}/api/v1/auth/login",
 							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"path": ["api", "v1", "auth", "login"]
 						}
 					}
-				}
-			]
-		},
-		{
-			"name": "📋 ms-listas-espera / Pacientes",
-			"description": "CRUD de pacientes en el sistema de listas de espera.\nTodos los endpoints requieren token JWT.",
-			"item": [
+				},
 				{
-					"name": "Registrar Paciente",
+					"name": "REGISTRAR - Nuevo Usuario (Paciente)",
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -167,229 +164,308 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"rut\": \"12345678-9\",\n    \"nombres\": \"Juan Carlos\",\n    \"apellidos\": \"Pérez López\",\n    \"fechaNacimiento\": \"1985-03-15\",\n    \"direccion\": \"Av. Los Leones 1234, Santiago\"\n}"
+							"raw": "{\n    \"username\": \"nuevopaciente\",\n    \"password\": \"pass123\",\n    \"rut\": \"11222333-4\",\n    \"role\": \"ROLE_PACIENTE\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/listas-espera/pacientes",
+							"raw": "{{base_url}}/api/v1/auth/register",
 							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "pacientes"]
+							"path": ["api", "v1", "auth", "register"]
 						},
-						"description": "Registra un nuevo paciente en el sistema de listas de espera."
+						"description": "Crea una nueva cuenta de usuario en el sistema. Por defecto asigna el rol de paciente."
 					}
 				},
 				{
-					"name": "Registrar Paciente 2 (para pruebas de reasignación)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"rut\": \"98765432-1\",\n    \"nombres\": \"María Fernanda\",\n    \"apellidos\": \"González Rojas\",\n    \"fechaNacimiento\": \"1990-07-22\",\n    \"direccion\": \"Calle Moneda 567, Santiago\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/pacientes",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "pacientes"]
-						},
-						"description": "Registra un segundo paciente para poder probar la reasignación automática."
-					}
-				},
-				{
-					"name": "Listar Todos los Pacientes",
+					"name": "LISTAR - Todos los Usuarios",
 					"request": {
 						"method": "GET",
 						"url": {
-							"raw": "{{base_url}}/api/listas-espera/pacientes",
+							"raw": "{{base_url}}/api/v1/usuarios",
 							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "pacientes"]
+							"path": ["api", "v1", "usuarios"]
 						},
-						"description": "Obtiene la lista completa de pacientes registrados."
-					}
-				},
-				{
-					"name": "Obtener Paciente por RUT",
-					"request": {
-						"method": "GET",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/pacientes/12345678-9",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "pacientes", "12345678-9"]
-						},
-						"description": "Busca un paciente por su RUT."
+						"description": "Devuelve una lista con todas las cuentas registradas en el sistema. Requiere token JWT (roles autorizados)."
 					}
 				}
 			]
 		},
 		{
-			"name": "🏥 ms-listas-espera / Atenciones",
-			"description": "Gestión de atenciones médicas y listas de espera.\nTipos de atención: CONSULTA, CIRUGIA, EMERGENCIA.\nEstados: EN_ESPERA, AGENDADO, ATENDIDO, CANCELADO.",
+			"name": "📋 ms-listas-espera",
+			"description": "Gestión de Pacientes y Atenciones Clínicas en la lista de espera del hospital.",
 			"item": [
 				{
-					"name": "Registrar Atención - Consulta General",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"rutPaciente\": \"12345678-9\",\n    \"tipo\": \"CONSULTA\",\n    \"prioridad\": 3,\n    \"detalle\": \"Cardiología\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones"]
-						},
-						"description": "Registra una consulta general.\n- **tipo**: CONSULTA\n- **prioridad**: 1 (alta) a 5 (baja)\n- **detalle**: Especialidad médica"
-					}
-				},
-				{
-					"name": "Registrar Atención - Cirugía",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"rutPaciente\": \"98765432-1\",\n    \"tipo\": \"CIRUGIA\",\n    \"prioridad\": 1,\n    \"detalle\": \"Cirugía Cardiovascular\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones"]
-						},
-						"description": "Registra una cirugía.\n- **tipo**: CIRUGIA\n- **prioridad**: 1 (alta) a 5 (baja)\n- **detalle**: Tipo de cirugía (requierePabellon se asigna como true por defecto)"
-					}
-				},
-				{
-					"name": "Registrar Atención - Emergencia",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"rutPaciente\": \"12345678-9\",\n    \"tipo\": \"EMERGENCIA\",\n    \"prioridad\": 1,\n    \"detalle\": \"Trauma craneoencefálico\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones"]
-						},
-						"description": "Registra una emergencia.\n- **tipo**: EMERGENCIA\n- **prioridad**: 1 (alta) a 5 (baja)\n- **detalle**: Motivo de la emergencia"
-					}
-				},
-				{
-					"name": "Listar Todas las Atenciones",
-					"request": {
-						"method": "GET",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones"]
-						},
-						"description": "Obtiene todas las atenciones registradas, sin importar su estado."
-					}
-				},
-				{
-					"name": "Listar Atenciones Pendientes (Lista de Espera)",
-					"request": {
-						"method": "GET",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones/pendientes",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones", "pendientes"]
-						},
-						"description": "Obtiene solo las atenciones con estado EN_ESPERA, ordenadas por prioridad (ascendente) y fecha de solicitud."
-					}
-				},
-				{
-					"name": "Obtener Atenciones por RUT del Paciente",
-					"request": {
-						"method": "GET",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones/paciente/12345678-9",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones", "paciente", "12345678-9"]
-						},
-						"description": "Obtiene todas las atenciones de un paciente específico por su RUT. Este endpoint es consumido internamente por ms-portal-paciente."
-					}
-				},
-				{
-					"name": "Actualizar Estado → AGENDADO",
-					"request": {
-						"method": "PUT",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=AGENDADO",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones", "1", "estado"],
-							"query": [
-								{
-									"key": "nuevoEstado",
-									"value": "AGENDADO"
+					"name": "Pacientes",
+					"item": [
+						{
+							"name": "Registrar Paciente",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rut\": \"12345678-9\",\n    \"nombres\": \"Juan Carlos\",\n    \"apellidos\": \"Pérez López\",\n    \"fechaNacimiento\": \"1985-03-15\",\n    \"direccion\": \"Av. Los Leones 1234, Santiago\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/pacientes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "pacientes"]
 								}
-							]
+							}
 						},
-						"description": "Cambia el estado de la atención con ID 1 a AGENDADO.\n\n**Estados válidos:** EN_ESPERA, AGENDADO, ATENDIDO, CANCELADO"
-					}
+						{
+							"name": "Registrar Paciente 2 (para reasignación)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rut\": \"98765432-1\",\n    \"nombres\": \"María Fernanda\",\n    \"apellidos\": \"González Rojas\",\n    \"fechaNacimiento\": \"1990-07-22\",\n    \"direccion\": \"Calle Moneda 567, Santiago\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/pacientes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "pacientes"]
+								}
+							}
+						},
+						{
+							"name": "Listar Todos los Pacientes",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/pacientes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "pacientes"]
+								}
+							}
+						},
+						{
+							"name": "Obtener Paciente por RUT",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/pacientes/12345678-9",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "pacientes", "12345678-9"]
+								}
+							}
+						}
+					]
 				},
 				{
-					"name": "Actualizar Estado → CANCELADO",
-					"request": {
-						"method": "PUT",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=CANCELADO",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones", "1", "estado"],
-							"query": [
-								{
-									"key": "nuevoEstado",
-									"value": "CANCELADO"
+					"name": "Atenciones",
+					"item": [
+						{
+							"name": "Registrar Atención - Consulta General",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rutPaciente\": \"12345678-9\",\n    \"tipo\": \"CONSULTA\",\n    \"prioridad\": 3,\n    \"detalle\": \"Cardiología\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones"]
 								}
-							]
+							}
 						},
-						"description": "Cambia el estado de la atención con ID 1 a CANCELADO.\nEsto simula una cancelación de hora médica."
-					}
+						{
+							"name": "Registrar Atención - Cirugía",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rutPaciente\": \"98765432-1\",\n    \"tipo\": \"CIRUGIA\",\n    \"prioridad\": 1,\n    \"detalle\": \"Cirugía Cardiovascular\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones"]
+								}
+							}
+						},
+						{
+							"name": "Registrar Atención - Emergencia",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rutPaciente\": \"12345678-9\",\n    \"tipo\": \"EMERGENCIA\",\n    \"prioridad\": 1,\n    \"detalle\": \"Trauma craneoencefálico\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones"]
+								}
+							}
+						},
+						{
+							"name": "Listar Todas las Atenciones",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones"]
+								}
+							}
+						},
+						{
+							"name": "Listar Atenciones Pendientes",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones/pendientes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones", "pendientes"]
+								}
+							}
+						},
+						{
+							"name": "Obtener Atenciones por Paciente",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones/paciente/12345678-9",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones", "paciente", "12345678-9"]
+								}
+							}
+						},
+						{
+							"name": "Actualizar Estado → AGENDADO",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=AGENDADO",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones", "1", "estado"],
+									"query": [
+										{
+											"key": "nuevoEstado",
+											"value": "AGENDADO"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Actualizar Estado → CANCELADO",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=CANCELADO",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones", "1", "estado"],
+									"query": [
+										{
+											"key": "nuevoEstado",
+											"value": "CANCELADO"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Actualizar Estado → ATENDIDO",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=ATENDIDO",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "atenciones", "1", "estado"],
+									"query": [
+										{
+											"key": "nuevoEstado",
+											"value": "ATENDIDO"
+										}
+									]
+								}
+							}
+						}
+					]
 				},
 				{
-					"name": "Actualizar Estado → ATENDIDO",
-					"request": {
-						"method": "PUT",
-						"url": {
-							"raw": "{{base_url}}/api/listas-espera/atenciones/1/estado?nuevoEstado=ATENDIDO",
-							"host": ["{{base_url}}"],
-							"path": ["api", "listas-espera", "atenciones", "1", "estado"],
-							"query": [
-								{
-									"key": "nuevoEstado",
-									"value": "ATENDIDO"
+					"name": "Saga",
+					"item": [
+						{
+							"name": "Crear Saga",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"rutPaciente\": \"12345678-9\",\n    \"tipo\": \"CONSULTA\",\n    \"prioridad\": 2,\n    \"detalle\": \"Consulta Neurológica\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/saga/crear",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "saga", "crear"]
 								}
-							]
+							}
 						},
-						"description": "Cambia el estado de la atención con ID 1 a ATENDIDO."
-					}
+						{
+							"name": "Confirmar Saga",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/saga/confirmar/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "saga", "confirmar", "1"]
+								}
+							}
+						},
+						{
+							"name": "Cancelar Saga",
+							"request": {
+								"method": "PUT",
+								"url": {
+									"raw": "{{base_url}}/api/listas-espera/saga/cancelar/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "listas-espera", "saga", "cancelar", "1"]
+								}
+							}
+						}
+					]
 				}
 			]
 		},
 		{
 			"name": "🔄 ms-reasignacion",
-			"description": "Motor de reasignación automática.\nAl procesar una cancelación, busca el siguiente paciente prioritario y le asigna la hora disponible.\nImplementa Circuit Breaker con Resilience4j.",
+			"description": "Motor de reasignación automática de citas cuando un paciente cancela su atención. Soporta Resilience4j y mensajería con RabbitMQ.",
 			"item": [
 				{
 					"name": "Procesar Reasignación Automática",
@@ -400,7 +476,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "reasignacion", "procesar", "1"]
 						},
-						"description": "Procesa la cancelación de la atención con ID 1.\n\n**Lógica interna:**\n1. Marca la atención como CANCELADO en ms-listas-espera\n2. Busca el siguiente paciente prioritario EN_ESPERA\n3. Lo marca como AGENDADO\n4. Registra la reasignación en la BD\n\n**Circuit Breaker:** Si ms-listas-espera no responde, registra la reasignación como FALLIDA con el mensaje de error."
+						"description": "Cancela la atención con ID 1 y reasigna automáticamente el cupo disponible al paciente prioritario de la lista de espera."
 					}
 				},
 				{
@@ -411,8 +487,7 @@
 							"raw": "{{base_url}}/api/reasignacion/historial",
 							"host": ["{{base_url}}"],
 							"path": ["api", "reasignacion", "historial"]
-						},
-						"description": "Obtiene el historial completo de todas las reasignaciones realizadas."
+						}
 					}
 				},
 				{
@@ -423,15 +498,14 @@
 							"raw": "{{base_url}}/api/reasignacion/paciente/98765432-1",
 							"host": ["{{base_url}}"],
 							"path": ["api", "reasignacion", "paciente", "98765432-1"]
-						},
-						"description": "Obtiene las reasignaciones asociadas a un paciente específico."
+						}
 					}
 				}
 			]
 		},
 		{
 			"name": "👤 ms-portal-paciente",
-			"description": "Portal de información para pacientes.\nGestiona el perfil del paciente y orquesta datos de otros microservicios para mostrar el estado de citas.",
+			"description": "Orquestador y presentador de perfiles de paciente y sus respectivas citas médicas.",
 			"item": [
 				{
 					"name": "Crear Perfil de Paciente",
@@ -445,14 +519,13 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"rut\": \"12345678-9\",\n    \"nombres\": \"Juan Carlos\",\n    \"apellidos\": \"Pérez López\",\n    \"fechaNacimiento\": \"1985-03-15\",\n    \"direccion\": \"Av. Los Leones 1234, Santiago\",\n    \"telefono\": \"+56912345678\",\n    \"correo\": \"juan.perez@email.com\",\n    \"prevision\": \"FONASA\",\n    \"historialClinicoBasico\": \"Hipertensión arterial diagnosticada en 2020. Alergia a la penicilina.\"\n}"
+							"raw": "{\n    \"rut\": \"12345678-9\",\n    \"nombres\": \"Juan Carlos\",\n    \"apellidos\": \"Pérez López\",\n    \"fechaNacimiento\": \"1985-03-15\",\n    \"direccion\": \"Av. Los Leones 1234, Santiago\",\n    \"telefono\": \"+56912345678\",\n    \"correo\": \"juan.perez@email.com\",\n    \"prevision\": \"FONASA\",\n    \"historialClinicoBasico\": \"Hipertensión arterial. Alergia a la penicilina.\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/portal-paciente/perfil",
 							"host": ["{{base_url}}"],
 							"path": ["api", "portal-paciente", "perfil"]
-						},
-						"description": "Crea el perfil completo de un paciente en el portal.\n\n**Valores de previsión válidos:** FONASA, ISAPRE, PARTICULAR, DIPRECA, CAPREDENA"
+						}
 					}
 				},
 				{
@@ -467,7 +540,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"rut\": \"98765432-1\",\n    \"nombres\": \"María Fernanda\",\n    \"apellidos\": \"González Rojas\",\n    \"fechaNacimiento\": \"1990-07-22\",\n    \"direccion\": \"Calle Moneda 567, Santiago\",\n    \"telefono\": \"+56987654321\",\n    \"correo\": \"maria.gonzalez@email.com\",\n    \"prevision\": \"ISAPRE\",\n    \"historialClinicoBasico\": \"Sin antecedentes de enfermedades crónicas.\"\n}"
+							"raw": "{\n    \"rut\": \"98765432-1\",\n    \"nombres\": \"María Fernanda\",\n    \"apellidos\": \"González Rojas\",\n    \"fechaNacimiento\": \"1990-07-22\",\n    \"direccion\": \"Calle Moneda 567, Santiago\",\n    \"telefono\": \"+56987654321\",\n    \"correo\": \"maria.gonzalez@email.com\",\n    \"prevision\": \"ISAPRE\",\n    \"historialClinicoBasico\": \"Sin antecedentes crónicos.\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/portal-paciente/perfil",
@@ -484,8 +557,7 @@
 							"raw": "{{base_url}}/api/portal-paciente/perfil/12345678-9",
 							"host": ["{{base_url}}"],
 							"path": ["api", "portal-paciente", "perfil", "12345678-9"]
-						},
-						"description": "Obtiene el perfil completo de un paciente por su RUT."
+						}
 					}
 				},
 				{
@@ -500,18 +572,17 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"direccion\": \"Nueva dirección: Av. Providencia 2000, Santiago\",\n    \"telefono\": \"+56911111111\",\n    \"correo\": \"juan.perez.nuevo@email.com\",\n    \"prevision\": \"ISAPRE\",\n    \"historialClinicoBasico\": \"Hipertensión arterial. Alergia a la penicilina. Control cardiológico 2025.\"\n}"
+							"raw": "{\n    \"direccion\": \"Nueva dirección: Av. Providencia 2000, Santiago\",\n    \"telefono\": \"+56911111111\",\n    \"correo\": \"juan.perez.nuevo@email.com\",\n    \"prevision\": \"ISAPRE\",\n    \"historialClinicoBasico\": \"Hipertensión arterial. Control cardiológico 2026.\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/portal-paciente/perfil/12345678-9",
 							"host": ["{{base_url}}"],
 							"path": ["api", "portal-paciente", "perfil", "12345678-9"]
-						},
-						"description": "Actualiza los datos de contacto y previsión del paciente.\n**Solo se actualizan:** dirección, teléfono, correo, previsión e historial clínico básico."
+						}
 					}
 				},
 				{
-					"name": "Consultar Citas del Paciente (Orquestación)",
+					"name": "Consultar Citas del Paciente (Orquestado)",
 					"request": {
 						"method": "GET",
 						"url": {
@@ -519,14 +590,32 @@
 							"host": ["{{base_url}}"],
 							"path": ["api", "portal-paciente", "perfil", "12345678-9", "citas"]
 						},
-						"description": "**Endpoint de orquestación:** Consulta las citas/derivaciones del paciente.\nEste endpoint internamente llama a ms-listas-espera para obtener las atenciones del paciente y las formatea para el portal.\n\n**Circuit Breaker:** Si ms-listas-espera no responde, devuelve un mensaje indicando que el servicio no está disponible."
+						"description": "Orquesta y obtiene información detallada de citas consultando listas de espera. Integra un Circuit Breaker local."
+					}
+				}
+			]
+		},
+		{
+			"name": "📊 ms-auditoria",
+			"description": "Estadísticas agregadas e indicadores de rendimiento del hospital calculados desde la base de datos.",
+			"item": [
+				{
+					"name": "Obtener Estadísticas de Espera",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/auditoria/estadisticas",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auditoria", "estadisticas"]
+						},
+						"description": "Invoca el procedimiento almacenado (o en su defecto un fallback JPQL sobre datos sincronizados) para obtener los tiempos promedio y totales por nivel de prioridad en la lista de espera."
 					}
 				}
 			]
 		},
 		{
 			"name": "🧪 Flujo Completo de Prueba",
-			"description": "Ejecuta estos endpoints EN ORDEN para probar el flujo completo del sistema:\n1. Login\n2. Crear pacientes\n3. Crear atenciones\n4. Reasignar\n5. Consultar portal",
+			"description": "Ejecuta los siguientes pasos en orden secuencial para verificar el flujo de integración completo de RedNorte:",
 			"item": [
 				{
 					"name": "PASO 1 → Login Admin",
@@ -553,14 +642,14 @@
 							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/login",
+							"raw": "{{base_url}}/api/v1/auth/login",
 							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"path": ["api", "v1", "auth", "login"]
 						}
 					}
 				},
 				{
-					"name": "PASO 2 → Crear Paciente Juan",
+					"name": "PASO 2 → Registrar Paciente Juan",
 					"request": {
 						"method": "POST",
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -576,7 +665,7 @@
 					}
 				},
 				{
-					"name": "PASO 3 → Crear Paciente María",
+					"name": "PASO 3 → Registrar Paciente María",
 					"request": {
 						"method": "POST",
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -643,8 +732,7 @@
 							"raw": "{{base_url}}/api/reasignacion/procesar/1",
 							"host": ["{{base_url}}"],
 							"path": ["api", "reasignacion", "procesar", "1"]
-						},
-						"description": "Cancela la atención de Juan (ID=1) y reasigna automáticamente a María (que está EN_ESPERA con prioridad 1)."
+						}
 					}
 				},
 				{
@@ -666,8 +754,18 @@
 							"raw": "{{base_url}}/api/listas-espera/atenciones",
 							"host": ["{{base_url}}"],
 							"path": ["api", "listas-espera", "atenciones"]
-						},
-						"description": "Verifica que la atención 1 está CANCELADO y la atención 2 está AGENDADO."
+						}
+					}
+				},
+				{
+					"name": "PASO 10 → Obtener estadísticas agregadas (ms-auditoria)",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/v1/auditoria/estadisticas",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auditoria", "estadisticas"]
+						}
 					}
 				}
 			]

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.5</version>
+		<version>3.3.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.rednorte</groupId>
@@ -15,7 +15,7 @@
 	<description>Microservicio de Reasignación Automática - RedNorte</description>
 	<properties>
 		<java.version>21</java.version>
-		<spring-cloud.version>2025.1.1</spring-cloud.version>
+		<spring-cloud.version>2023.0.3</spring-cloud.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -24,7 +24,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -49,12 +49,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- RabbitMQ AMQP dependency -->
@@ -91,6 +86,18 @@
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<exclude>**/entity/**</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/exception/**</exclude>
+						<exclude>**/config/**</exclude>
+						<exclude>**/repository/**</exclude>
+						<exclude>**/controller/**</exclude>
+						<exclude>**/Application.class</exclude>
+						<exclude>**/*Application.class</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>

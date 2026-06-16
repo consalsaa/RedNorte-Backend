@@ -52,7 +52,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         }
 
         // Verificar si la ruta es pública
-        if (isPublicPath(path)) {
+        if (isPublicPath(path) || (request.getMethod() != null && "POST".equalsIgnoreCase(request.getMethod().name()) &&
+                (path.equals("/api/listas-espera/pacientes") || path.equals("/api/portal-paciente/perfil")))) {
             return chain.filter(exchange);
         }
 

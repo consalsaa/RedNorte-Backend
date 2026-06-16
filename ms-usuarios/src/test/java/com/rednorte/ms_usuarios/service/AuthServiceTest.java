@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 class AuthServiceTest {
@@ -61,5 +62,32 @@ class AuthServiceTest {
         Optional<String> result = authService.login("notfound", "pass");
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void registrarUsuario_Success() {
+        Usuario mockUser = new Usuario("juan.perez", "pass123", "ROLE_PACIENTE", "12345678-9");
+        when(usuarioRepository.findByUsername("juan.perez")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(mockUser);
+
+        Usuario result = authService.registrarUsuario("juan.perez", "pass123", "ROLE_PACIENTE", "12345678-9");
+
+        assertNotNull(result);
+        assertEquals("juan.perez", result.getUsername());
+        assertEquals("ROLE_PACIENTE", result.getRole());
+        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+    }
+
+    @Test
+    void registrarUsuario_AlreadyExists() {
+        Usuario mockUser = new Usuario("juan.perez", "pass123", "ROLE_PACIENTE", "12345678-9");
+        when(usuarioRepository.findByUsername("juan.perez")).thenReturn(Optional.of(mockUser));
+
+        Exception exception = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            authService.registrarUsuario("juan.perez", "pass123", "ROLE_PACIENTE", "12345678-9");
+        });
+
+        assertEquals("El nombre de usuario 'juan.perez' ya está en uso.", exception.getMessage());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 }

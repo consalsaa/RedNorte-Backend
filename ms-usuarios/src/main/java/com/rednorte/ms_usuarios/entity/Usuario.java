@@ -19,6 +19,9 @@ public class Usuario {
     @Column(nullable = false)
     private String role;
 
+    @Column(nullable = true)
+    private String rut;
+
     public Usuario() {
     }
 
@@ -26,6 +29,13 @@ public class Usuario {
         this.username = username;
         this.password = password;
         this.role = role;
+    }
+
+    public Usuario(String username, String password, String role, String rut) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.rut = rut;
     }
 
     public Long getId() {
@@ -54,5 +64,13 @@ public class Usuario {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getRut() {
+        return rut;
+    }
+
+    public void setRut(String rut) {
+        this.rut = rut;
     }
 }

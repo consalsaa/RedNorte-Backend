@@ -49,13 +49,13 @@ public class AuthService {
      * @param role Rol del usuario (ej: ROLE_PACIENTE, ROLE_MEDICO, ROLE_ADMIN).
      * @return El usuario recién creado.
      */
-    public Usuario registrarUsuario(String username, String password, String role) {
+    public Usuario registrarUsuario(String username, String password, String role, String rut) {
         if (usuarioRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("El nombre de usuario '" + username + "' ya está en uso.");
         }
         // El rol por defecto para auto-registro es ROLE_PACIENTE para proteger el sistema
         String rolAsignado = (role != null && !role.isBlank()) ? role : "ROLE_PACIENTE";
-        Usuario nuevoUsuario = new Usuario(username, password, rolAsignado);
+        Usuario nuevoUsuario = new Usuario(username, password, rolAsignado, rut);
         return usuarioRepository.save(nuevoUsuario);
     }
 }

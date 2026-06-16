@@ -21,7 +21,7 @@ BEGIN
     RETURN QUERY
     SELECT a.prioridad, COUNT(*)
     FROM atenciones a
-    WHERE a.estado = 'PENDIENTE'
+    WHERE a.estado = 'EN_ESPERA'
     GROUP BY a.prioridad;
 END;
 $$;
