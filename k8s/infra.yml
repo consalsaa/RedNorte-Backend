@@ -71,10 +71,7 @@ spec:
               cpu: 500m
               memory: 512Mi
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+            runAsUser: 0
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
