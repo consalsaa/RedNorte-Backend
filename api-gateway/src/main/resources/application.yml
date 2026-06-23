@@ -46,11 +46,15 @@ spring:
           uri: lb://MS-AUDITORIA
           predicates:
             - Path=/api/v1/auditoria/**
+        - id: ms-notificaciones
+          uri: lb://MS-NOTIFICACIONES
+          predicates:
+            - Path=/api/notificaciones/**
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-server:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
 # Configuración JWT
 jwt:

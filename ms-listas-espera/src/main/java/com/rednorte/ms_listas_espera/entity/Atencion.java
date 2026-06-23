@@ -30,7 +30,7 @@ public abstract class Atencion implements java.io.Serializable {
     private Integer prioridad; // 1 (Gravedad Alta) a 5 (Baja)
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "saga_status", nullable = false)
+    @Column(name = "saga_status")
     private SagaStatus sagaStatus;
 
     public Atencion() {

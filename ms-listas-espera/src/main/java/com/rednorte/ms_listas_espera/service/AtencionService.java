@@ -14,4 +14,5 @@ public interface AtencionService {
     Atencion registrarAtencionSaga(AtencionDTO dto);
     Atencion cancelarAtencionSaga(Long id);
     Atencion confirmarAtencionSaga(Long id);
+    void vaciarCache();
 }

@@ -2,6 +2,7 @@ package com.rednorte.ms_portal_paciente.service;
 
 import com.rednorte.ms_portal_paciente.entity.Paciente;
 import com.rednorte.ms_portal_paciente.repository.PacienteRepository;
+import com.rednorte.ms_portal_paciente.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ public class PacienteServiceImpl implements PacienteService {
     @Override
     public Paciente obtenerPerfilPorRut(String rut) {
         return pacienteRepository.findByRut(rut)
-                .orElseThrow(() -> new RuntimeException("Paciente no encontrado en el portal"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado en el portal"));
     }
 
     @Override
