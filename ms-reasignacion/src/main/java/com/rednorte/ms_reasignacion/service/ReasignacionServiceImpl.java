@@ -85,8 +85,41 @@ public class ReasignacionServiceImpl implements ReasignacionService {
             return reasignacionRepository.save(sinMatch);
         }
 
-        // 3. Tomar el primer paciente prioritario (ya vienen ordenados por prioridad)
-        Map siguienteAtencion = pendientes.get(0);
+        // 3. Tomar el primer paciente prioritario que coincida clínicamente con la especialidad/tipo
+        Map siguienteAtencion = null;
+        String especialidadCancelada = obtenerDetalle(atencionCancelada);
+        String tipoCancelado = obtenerTipoAtencion(atencionCancelada);
+
+        // Intento 1: Buscar coincidencia exacta por tipo (Consulta/Cirugía) y especialidad/procedimiento
+        for (Map pendiente : pendientes) {
+            String especialidadPendiente = obtenerDetalle(pendiente);
+            String tipoPendiente = obtenerTipoAtencion(pendiente);
+            if (tipoCancelado.equals(tipoPendiente) && especialidadCancelada.equalsIgnoreCase(especialidadPendiente)) {
+                siguienteAtencion = pendiente;
+                log.info("Coincidencia clínica exacta encontrada para especialidad '{}': Atención ID {}", especialidadCancelada, pendiente.get("id"));
+                break;
+            }
+        }
+
+        // Intento 2 (Fallback): Buscar coincidencia general por tipo de atención
+        if (siguienteAtencion == null) {
+            for (Map pendiente : pendientes) {
+                String tipoPendiente = obtenerTipoAtencion(pendiente);
+                if (tipoCancelado.equals(tipoPendiente)) {
+                    siguienteAtencion = pendiente;
+                    log.info("Coincidencia de tipo general '{}' encontrada (Especialidad cancelada: '{}', pendiente: '{}'): Atención ID {}", 
+                            tipoCancelado, especialidadCancelada, obtenerDetalle(pendiente), pendiente.get("id"));
+                    break;
+                }
+            }
+        }
+
+        // Intento 3 (Último recurso): Tomar el primero de la lista
+        if (siguienteAtencion == null) {
+            siguienteAtencion = pendientes.get(0);
+            log.info("No se encontró coincidencia por tipo o especialidad. Asignando primer paciente en fila por defecto: Atención ID {}", siguienteAtencion.get("id"));
+        }
+
         Long siguienteId = ((Number) siguienteAtencion.get("id")).longValue();
         
         String rutReasignado = "N/A";
@@ -115,7 +148,11 @@ public class ReasignacionServiceImpl implements ReasignacionService {
         try {
             Map<String, Object> messagePayload = Map.of(
                 "atencionId", siguienteId,
-                "mensaje", "Reasignación completada"
+                "rutPaciente", rutReasignado,
+                "mensaje", "Reasignación automática exitosa. "
+                        + "Atención ID " + siguienteId + " agendada para el paciente " + rutReasignado,
+                "tipo", "REASIGNACION",
+                "fecha", java.time.LocalDateTime.now().toString()
             );
             rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, messagePayload);
             log.info("Mensaje de reasignación enviado a RabbitMQ para atención ID: {}", siguienteId);
@@ -154,5 +191,31 @@ public class ReasignacionServiceImpl implements ReasignacionService {
     @Override
     public List<Reasignacion> obtenerPorPaciente(String rut) {
         return reasignacionRepository.findByRutPacienteReasignado(rut);
+    }
+
+    private String obtenerDetalle(Map atencion) {
+        if (atencion == null) return "";
+        if (atencion.containsKey("especialidad") && atencion.get("especialidad") != null) {
+            return (String) atencion.get("especialidad");
+        }
+        if (atencion.containsKey("tipoCirugia") && atencion.get("tipoCirugia") != null) {
+            return (String) atencion.get("tipoCirugia");
+        }
+        if (atencion.containsKey("motivoEmergencia") && atencion.get("motivoEmergencia") != null) {
+            return (String) atencion.get("motivoEmergencia");
+        }
+        if (atencion.containsKey("detalle") && atencion.get("detalle") != null) {
+            return (String) atencion.get("detalle");
+        }
+        return "";
+    }
+
+    private String obtenerTipoAtencion(Map atencion) {
+        if (atencion == null) return "CONSULTA";
+        if (atencion.containsKey("especialidad")) return "CONSULTA";
+        if (atencion.containsKey("tipoCirugia")) return "CIRUGIA";
+        if (atencion.containsKey("motivoEmergencia")) return "EMERGENCIA";
+        if (atencion.get("tipo") != null) return (String) atencion.get("tipo");
+        return "CONSULTA";
     }
 }

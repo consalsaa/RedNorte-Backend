@@ -1,0 +1,70 @@
+name: Deploy Backend to AWS EKS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build, Push and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Backend Images to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Building and pushing eureka-server..."
+          docker build -t $ECR_REGISTRY/rednorte-eureka-server:$IMAGE_TAG ./eureka-server
+          docker push $ECR_REGISTRY/rednorte-eureka-server:$IMAGE_TAG
+
+          echo "Building and pushing api-gateway..."
+          docker build -t $ECR_REGISTRY/rednorte-api-gateway:$IMAGE_TAG ./api-gateway
+          docker push $ECR_REGISTRY/rednorte-api-gateway:$IMAGE_TAG
+
+          echo "Building and pushing ms-usuarios..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-usuarios:$IMAGE_TAG ./ms-usuarios
+          docker push $ECR_REGISTRY/rednorte-ms-usuarios:$IMAGE_TAG
+
+          echo "Building and pushing ms-listas-espera..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-listas-espera:$IMAGE_TAG ./ms-listas-espera
+          docker push $ECR_REGISTRY/rednorte-ms-listas-espera:$IMAGE_TAG
+
+          echo "Building and pushing ms-portal-paciente..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-portal-paciente:$IMAGE_TAG ./ms-portal-paciente
+          docker push $ECR_REGISTRY/rednorte-ms-portal-paciente:$IMAGE_TAG
+
+      - name: Replace Placeholders in Manifests
+        run: |
+          sed -i "s/\${AWS_ACCOUNT_ID}/${{ secrets.AWS_ACCOUNT_ID }}/g" k8s/backend.yml
+          sed -i "s/REPLACE_TAG/${{ github.sha }}/g" k8s/backend.yml
+
+      - name: Update Kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region us-east-1
+
+      - name: Deploy Infrastructure
+        run: |
+          kubectl apply -f k8s/infra.yml
+
+      - name: Deploy Backend Microservices
+        run: |
+          kubectl apply -f k8s/backend.yml

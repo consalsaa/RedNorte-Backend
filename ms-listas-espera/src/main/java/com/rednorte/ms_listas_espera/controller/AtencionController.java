@@ -81,4 +81,10 @@ public class AtencionController {
     public ResponseEntity<List<Atencion>> obtenerPorRutPaciente(@PathVariable String rut) {
         return ResponseEntity.ok(atencionService.obtenerPorRutPaciente(rut));
     }
+
+    @DeleteMapping("/cache")
+    public ResponseEntity<Void> vaciarCache() {
+        atencionService.vaciarCache();
+        return ResponseEntity.noContent().build();
+    }
 }

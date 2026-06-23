@@ -159,4 +159,10 @@ public class AtencionServiceImpl implements AtencionService {
         atencion.setSagaStatus(SagaStatus.CONFIRMED);
         return atencionRepository.save(atencion);
     }
+
+    @Override
+    @CacheEvict(value = "listasEspera", allEntries = true)
+    public void vaciarCache() {
+        // Ejecuta la invalidación total de caché
+    }
 }
