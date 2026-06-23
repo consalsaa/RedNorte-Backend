@@ -174,6 +174,8 @@ spec:
               value: "true"
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-service:5432/usuarios_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
             - name: SPRING_DATASOURCE_USERNAME
               value: postgres
             - name: SPRING_DATASOURCE_PASSWORD
@@ -250,8 +252,12 @@ spec:
               value: http://eureka-server:8761/eureka/
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-service:5432/listas_espera_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
             - name: SPRING_DATASOURCE_USERNAME
               value: postgres
             - name: SPRING_DATASOURCE_PASSWORD
@@ -336,6 +342,8 @@ spec:
               value: "true"
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-service:5432/portal_paciente_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
             - name: SPRING_DATASOURCE_USERNAME
               value: postgres
             - name: SPRING_DATASOURCE_PASSWORD
