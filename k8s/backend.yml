@@ -72,12 +72,12 @@ metadata:
   labels:
     app: api-gateway
 spec:
+  type: LoadBalancer
   ports:
     - port: 8080
       targetPort: 8080
   selector:
     app: api-gateway
-  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
