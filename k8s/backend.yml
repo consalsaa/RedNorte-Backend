@@ -35,7 +35,7 @@ spec:
             - containerPort: 8761
           env:
             - name: JAVA_OPTS
-              value: "-Xmx192m -Xms64m"
+              value: "-Xmx256m -Xms128m"
             - name: EUREKA_INSTANCE_HOSTNAME
               value: eureka-server
             - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
@@ -44,26 +44,30 @@ spec:
               value: "false"
           resources:
             requests:
-              cpu: 25m
-              memory: 128Mi
-            limits:
-              cpu: 100m
+              cpu: 50m
               memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8761
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8761
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8761
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -102,33 +106,37 @@ spec:
             - containerPort: 8080
           env:
             - name: JAVA_OPTS
-              value: "-Xmx192m -Xms64m"
+              value: "-Xmx256m -Xms128m"
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: http://eureka-server:8761/eureka/
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
           resources:
             requests:
-              cpu: 25m
-              memory: 128Mi
-            limits:
-              cpu: 200m
+              cpu: 50m
               memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8080
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8080
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -190,25 +198,29 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8084
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8084
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -278,25 +290,29 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8081
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8081
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -358,25 +374,29 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8083
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8083
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -442,25 +462,29 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8082
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8082
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -526,25 +550,29 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8085
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8085
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8085
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
 ---
 apiVersion: v1
 kind: Service
@@ -606,22 +634,26 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 192Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
-              memory: 384Mi
+              cpu: 500m
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          startupProbe:
+            tcpSocket:
+              port: 8086
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
           livenessProbe:
             tcpSocket:
               port: 8086
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             tcpSocket:
               port: 8086
-            initialDelaySeconds: 45
-            periodSeconds: 10
+            periodSeconds: 15
