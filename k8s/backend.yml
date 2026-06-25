@@ -35,7 +35,7 @@ spec:
             - containerPort: 8761
           env:
             - name: JAVA_OPTS
-              value: "-Xmx256m -Xms128m"
+              value: "-Xmx192m -Xms64m"
             - name: EUREKA_INSTANCE_HOSTNAME
               value: eureka-server
             - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
@@ -44,11 +44,11 @@ spec:
               value: "false"
           resources:
             requests:
-              cpu: 50m
-              memory: 192Mi
+              cpu: 25m
+              memory: 128Mi
             limits:
-              cpu: 500m
-              memory: 384Mi
+              cpu: 100m
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -102,18 +102,18 @@ spec:
             - containerPort: 8080
           env:
             - name: JAVA_OPTS
-              value: "-Xmx256m -Xms128m"
+              value: "-Xmx192m -Xms64m"
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: http://eureka-server:8761/eureka/
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
           resources:
             requests:
-              cpu: 50m
-              memory: 192Mi
+              cpu: 25m
+              memory: 128Mi
             limits:
-              cpu: 500m
-              memory: 384Mi
+              cpu: 200m
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -189,11 +189,11 @@ spec:
               value: update
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 192Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 250m
+              memory: 384Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -277,11 +277,11 @@ spec:
               value: redis-service
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 192Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 250m
+              memory: 384Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -357,11 +357,11 @@ spec:
               value: update
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 192Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 250m
+              memory: 384Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -375,5 +375,253 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 8083
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-reasignacion
+  labels:
+    app: ms-reasignacion
+spec:
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: ms-reasignacion
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-reasignacion
+  labels:
+    app: ms-reasignacion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-reasignacion
+  template:
+    metadata:
+      labels:
+        app: ms-reasignacion
+    spec:
+      containers:
+        - name: ms-reasignacion
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/rednorte-ms-reasignacion:REPLACE_TAG
+          ports:
+            - containerPort: 8082
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx256m -Xms128m"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-service:5432/reasignacion_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: org.hibernate.dialect.PostgreSQLDialect
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq-service
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 250m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-notificaciones
+  labels:
+    app: ms-notificaciones
+spec:
+  ports:
+    - port: 8085
+      targetPort: 8085
+  selector:
+    app: ms-notificaciones
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-notificaciones
+  labels:
+    app: ms-notificaciones
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-notificaciones
+  template:
+    metadata:
+      labels:
+        app: ms-notificaciones
+    spec:
+      containers:
+        - name: ms-notificaciones
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/rednorte-ms-notificaciones:REPLACE_TAG
+          ports:
+            - containerPort: 8085
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx256m -Xms128m"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-service:5432/notificaciones_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: org.hibernate.dialect.PostgreSQLDialect
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq-service
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 250m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            tcpSocket:
+              port: 8085
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8085
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-auditoria
+  labels:
+    app: ms-auditoria
+spec:
+  ports:
+    - port: 8086
+      targetPort: 8086
+  selector:
+    app: ms-auditoria
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auditoria
+  labels:
+    app: ms-auditoria
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-auditoria
+  template:
+    metadata:
+      labels:
+        app: ms-auditoria
+    spec:
+      containers:
+        - name: ms-auditoria
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/rednorte-ms-auditoria:REPLACE_TAG
+          ports:
+            - containerPort: 8086
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx256m -Xms128m"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-service:5432/auditoria_db
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: org.hibernate.dialect.PostgreSQLDialect
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: update
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 250m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            tcpSocket:
+              port: 8086
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8086
             initialDelaySeconds: 45
             periodSeconds: 10

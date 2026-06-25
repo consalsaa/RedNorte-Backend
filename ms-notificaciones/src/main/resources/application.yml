@@ -9,12 +9,12 @@ spring:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
   
-  # Base de datos H2 en memoria por defecto para Desarrollo Local
+  # Base de datos (H2 por defecto, PostgreSQL en Kubernetes)
   datasource:
-    url: jdbc:h2:mem:ms-notificaciones_db;DB_CLOSE_DELAY=-1
-    driverClassName: org.h2.Driver
-    username: sa
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ms-notificaciones_db;DB_CLOSE_DELAY=-1}
+    driverClassName: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
   
   # Consola web de H2
   h2:
@@ -24,9 +24,9 @@ spring:
   
   # JPA / Hibernate
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.H2Dialect}
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: true
 
 # Registro de Cliente en Eureka Server

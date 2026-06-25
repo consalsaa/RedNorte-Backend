@@ -52,6 +52,18 @@ jobs:
           docker build -t $ECR_REGISTRY/rednorte-ms-portal-paciente:$IMAGE_TAG ./ms-portal-paciente
           docker push $ECR_REGISTRY/rednorte-ms-portal-paciente:$IMAGE_TAG
 
+          echo "Building and pushing ms-reasignacion..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-reasignacion:$IMAGE_TAG ./ms-reasignacion
+          docker push $ECR_REGISTRY/rednorte-ms-reasignacion:$IMAGE_TAG
+
+          echo "Building and pushing ms-notificaciones..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-notificaciones:$IMAGE_TAG ./ms-notificaciones
+          docker push $ECR_REGISTRY/rednorte-ms-notificaciones:$IMAGE_TAG
+
+          echo "Building and pushing ms-auditoria..."
+          docker build -t $ECR_REGISTRY/rednorte-ms-auditoria:$IMAGE_TAG ./ms-auditoria
+          docker push $ECR_REGISTRY/rednorte-ms-auditoria:$IMAGE_TAG
+
       - name: Replace Placeholders in Manifests
         run: |
           sed -i "s/\${AWS_ACCOUNT_ID}/${{ secrets.AWS_ACCOUNT_ID }}/g" k8s/backend.yml
